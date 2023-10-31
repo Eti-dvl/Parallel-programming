@@ -17,10 +17,24 @@ int total_prime = 0;
 // Implement is_prime function
 // If the argument is a prime number function returns 1
 // If the argument is NOT a prime number function returns 0
-int is_prime(int num)
-{
-  return 0;
+int is_prime(int num){
+    if (num % 2 == 0){
+        return 0; // 2 et tous les nombres divisables par 2 ne sont pas premiers
+    }
+
+    if (num == 3){
+      return 1; // 3 est premier
+    }
+
+    for (int i = 5; i * i <= num; i += 6) { // on détermine la racine carré du nombre
+        if (num % i == 0 || num % (i + 2) == 0) { // On vérifie les diviseurs jusqu'à la racine carré obtenu et on teste si c'est premier ou non.
+            return 0;
+        }
+    }
+
+    return 1;
 }
+
 
 void *thread_runner(void* thread_arg)
 {
