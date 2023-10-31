@@ -64,9 +64,13 @@ build/%.o: src/%.c
 # pour mesurer le temps en variant le nombre de threads num de 1 à 8
 # for num in [1 2 3 4 5 6 7 8]:
 #	time -a -o ./tutorial.log ./tutorial num
-time: $(BIN)
+run: $(BIN)
 	rm -f $(LOG)
 	time -p -a -o $(LOG) ./$(BIN)
+	
+time: $(BIN)
+	rm -f $(LOG)
+	for nb_thread in $(THREAD_NUM); do echo "$(BIN) $$nb_thread:" >> $(LOG); time -p -a ./$(BIN) $$nb_thread; done
 
 # on indique que les cibles des règles 'clean' et 'time' ne sont pas des fichiers
 .PHONY: clean time
