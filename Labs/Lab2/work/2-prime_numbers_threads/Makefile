@@ -10,6 +10,7 @@ OBJ := $(patsubst %.c,%.o,$(SRC))
 # Le nom du programme final
 BIN := prime_numbers_threads
 LOG := $(BIN).log
+CSV := $(BIN).csv
 PGM := *.pgm
 
 # Nombre de threads à utiliser 
@@ -71,6 +72,11 @@ run: $(BIN)
 time: $(BIN)
 	rm -f $(LOG)
 	for nb_thread in $(THREAD_NUM); do echo "$(BIN) $$nb_thread:" >> $(LOG); time -p -a ./$(BIN) $$nb_thread; done
+	
+time_csv: $(BIN)
+	rm -f $(CSV)
+	echo "nb_thread,real,user,sys" > $(CSV)
+	for nb_thread in $(THREAD_NUM); do time -p -a -f "$$nb_thread,%E,%U,%S" -o $(CSV) ./$(BIN) $$nb_thread; done
 
 # on indique que les cibles des règles 'clean' et 'time' ne sont pas des fichiers
 .PHONY: clean time
