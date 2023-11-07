@@ -6,9 +6,8 @@
 
 #define N 10000000
 #define NUM_THREADS 4
-#define JUMP 50
 
-typedef struct
+typedef struct 
 {
   int thread_id;
   int start;
@@ -16,6 +15,7 @@ typedef struct
 
 int total_prime = 0;
 int numThreads;
+int jump;
 pthread_mutex_t mutex;
 
 // Implement is_prime function
@@ -56,15 +56,15 @@ void *thread_runner(void* thread_arg)
 
   printf("Thread %d start\n", my_args->thread_id);
   
-  for (int num = my_args->start; num <= N ; num = num + numThreads*JUMP)
+  for (int num = my_args->start; num <= N ; num = num + numThreads*jump)
   {
-    if(num+JUMP > N)  //checks not to exceed N
+    if(num+jump > N)  //checks not to exceed N
     {
       max = N - num;
     }
     else
     {
-      max = JUMP;
+      max = jump;
     }
     for(int i = 0 ; i < max ; i++)
     {
@@ -95,10 +95,11 @@ int main(int argc, char **argv)
   pthread_t threads[numThreads];
   thread_args_t threadParams[numThreads];
 
+  jump = (numThreads%5 == 0) ? 15 : 14;
   for (int i = 0; i < numThreads; i++)
   {
     threadParams[i].thread_id = i;
-    threadParams[i].start = i*JUMP;
+    threadParams[i].start = i*jump;
     pthread_create(&threads[i], NULL, thread_runner, (void *)&threadParams[i]);
   }
 
