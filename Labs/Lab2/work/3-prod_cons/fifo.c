@@ -7,11 +7,7 @@
  *
  */
 
-
 #include "fifo.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
 /**
  * @brief Constructor
@@ -31,6 +27,7 @@ fifo_t *fifo_new(int size) {
     self->size = size;
     self->read_idx = 0;
     self->write_idx = 0;
+    pthread_mutex_init(&self->mutex, NULL); // Initialize the mutex
     return self;
 }
 
@@ -39,6 +36,7 @@ fifo_t *fifo_new(int size) {
  * @param self fifo to deallocate
  */
 int fifo_destroy(fifo_t *self) {
+    pthread_mutex_destroy(&self->mutex); // Destroy the mutex
     free(self->buffer);
     free(self);
     return FIFO_OK;
@@ -52,11 +50,14 @@ int fifo_destroy(fifo_t *self) {
  */
 int fifo_push(fifo_t *self, int item) {
     assert(self);
+    pthread_mutex_lock(&self->mutex); // Lock the mutex
     if (fifo_full(self)) {
+        pthread_mutex_unlock(&self->mutex); // Unlock the mutex
         return FIFO_ERR_FULL;
     }
     self->buffer[self->write_idx] = item;
     self->write_idx = (self->write_idx + 1) % self->size;
+    pthread_mutex_unlock(&self->mutex); // Unlock the mutex
     return FIFO_OK;
 }
 
@@ -69,11 +70,14 @@ int fifo_push(fifo_t *self, int item) {
 int fifo_pop(fifo_t *self, int *item) {
     assert(self); 
     assert(item);
+    pthread_mutex_lock(&self->mutex); // Lock the mutex
     if (fifo_empty(self)) {
+        pthread_mutex_unlock(&self->mutex); // Unlock the mutex
         return FIFO_ERR_EMPTY;
     }
     *item = self->buffer[self->read_idx];
     self->read_idx = (self->read_idx + 1) % self->size;
+    pthread_mutex_unlock(&self->mutex); // Unlock the mutex
     return FIFO_OK;
 }
 

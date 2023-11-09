@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 
 enum {
     FIFO_OK = 0,
@@ -24,6 +25,7 @@ typedef struct {
     int size;
     int read_idx ;
     int write_idx;
+    pthread_mutex_t mutex; // Mutex for thread safety
 } fifo_t;
 
 fifo_t *fifo_new(int size);
