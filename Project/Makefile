@@ -1,5 +1,5 @@
 # Add your names here!
-NAMES ?= CORREGE_SAINT-CIRGUE
+NAMES ?= HAMELIN_BERNE
 
 BIN := main
 SRC := $(wildcard src/*.c)
