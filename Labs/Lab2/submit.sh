@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change with your names, separated with a '_'. Do not use whitespaces!
-NAMES="HAMELIN_BERNE"
+NAMES="CORREGE-SAINT_CIRGUE"
 
 # Clean all generated files
 cd work
