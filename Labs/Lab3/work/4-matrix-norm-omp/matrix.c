@@ -1,7 +1,7 @@
 /**
  * @file matrix.c
  * @brief Matrix utilities
- * @author Etienne Hamelin
+ * @author Saint-Cirgue Arnaud & Corrège Etienne
  * @date 26/10/2023
  */
 
@@ -155,9 +155,16 @@ double mat_norm_ij(mat_t *self) {
 double mat_norm_omp(mat_t *self) {
     assert(self);
 
-    /* Write your code here */
+    double norm_sq = 0.0;
 
-    return 0.0f;
+    #pragma omp parallel for reduction(+:norm_sq)
+    for (int i = 0; i < self->rows; i++) {
+        for (int j = 0; j < self->cols; j++) {
+            norm_sq += MAT(self, i, j) * MAT(self, i, j);
+        }
+    }
+
+    return sqrt(norm_sq);
 }
 
 /**
