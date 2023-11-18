@@ -54,7 +54,7 @@ void *thread_runner(void* thread_arg)
   int count = 0;
   int max = 0;
 
-  printf("Thread %d start\n", my_args->thread_id);
+  //printf("Thread %d start\n", my_args->thread_id);
   
   for (int num = my_args->start; num <= N ; num = num + numThreads*jump)
   {
@@ -75,12 +75,12 @@ void *thread_runner(void* thread_arg)
     } 
   }
 
-  printf("%d prime numbers in thread %d\n", count, my_args->thread_id);
+  //printf("%d prime numbers in thread %d\n", count, my_args->thread_id);
   pthread_mutex_lock(&mutex);
   total_prime += count;
   pthread_mutex_unlock(&mutex);
   
-  printf("Thread %d stop\n", my_args->thread_id);
+  //printf("Thread %d stop\n", my_args->thread_id);
   pthread_exit(NULL);
 }
 
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   if(argc > 1)                    //read the number of threads
   {
     numThreads = atoi(argv[1]);
-    printf("Number of threads : %d\n", numThreads);
+    //printf("Number of threads : %d\n", numThreads);
   }
   pthread_t threads[numThreads];
   thread_args_t threadParams[numThreads];
@@ -110,6 +110,6 @@ int main(int argc, char **argv)
 
   pthread_mutex_destroy(&mutex);
 
-  printf("NUMBER PRIMES = %d\n", total_prime);
+  //printf("NUMBER PRIMES = %d\n", total_prime);
   exit(EXIT_SUCCESS);
 }

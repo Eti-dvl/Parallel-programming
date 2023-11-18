@@ -16,6 +16,7 @@ int main (int argc, char **argv)
     }
     printf("Start with %d threads\n", n_threads);
 
+#pragma omp parallel for num_threads(n_threads) reduction(+:sum)
     for (n = N_MAX; n > 0; n--)
     {
         if (n%2 == 0)
