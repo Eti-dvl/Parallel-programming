@@ -102,6 +102,7 @@ int ccl_temp_tag(
   /* Detect background color: by convention, background is the color of the top-left pixel */
   bg_color = image_bmp_getpixel(self, 0, 0).bit;
 
+  #pragma omp parallel for private(x)
   /* Loop over all image pixels */
   for(y = 0; y < self->height; ++y)
   {
@@ -131,6 +132,7 @@ int ccl_temp_tag(
 
         if (tag == 0)
         {
+          #pragma omp critical
           /* adjacent pixels have not yet been tagged: allocate a new tag */
           ++num_tags;
           assert(num_tags < MAX_TAGS);
@@ -141,6 +143,7 @@ int ccl_temp_tag(
         
         if (tag_n > 0 && tag_w > 0 && tag_w != tag_n)
         {
+          #pragma omp critical
           /* if neighbors have different tags: join them */
           join(equiv_out, tag_n, tag_w);
         }
