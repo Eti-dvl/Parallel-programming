@@ -1,7 +1,7 @@
 /**
  * @file matrix.c
  * @brief Matrix utilities
- * @author Etienne Hamelin
+ * @author Saint-Cirgue Arnaud & Correge Etienne
  * @date 26/10/2023
  */
 
@@ -193,18 +193,23 @@ mat_t *mat_mult_omp(mat_t *res, const mat_t *a, const mat_t *b) {
     int p = b->cols;
     if (p != res->cols) return NULL;
 
-    /* Write your code here ! */
+    
     /* Actually compute the matrix multiplication */
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            MAT(res, i, j) = 0.0;
-            for (int k = 0; k < n; k++) {
-                MAT(res, i, j) += MAT(a, i, k) * MAT(b, k, j);
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < p; ++j) {
+            double sum = 0.0;
+            #pragma omp parallel for reduction(+:sum)
+            for (int k = 0; k < n; ++k) {
+                sum += MAT(a, i, k) * MAT(b, k, j);
             }
+            MAT(res, i, j) = sum;
         }
     }
+
     return res;
 }
+
 
 /**
  * @brief Check if two matrices are equal

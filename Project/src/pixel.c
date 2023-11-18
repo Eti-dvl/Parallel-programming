@@ -1,7 +1,7 @@
 /**
  * @file pixel.c
  * @brief Pixel color type conversions utilities
- * @author Etienne HAMELIN
+ * @author Saint-Cirgue Arnaud _ Correge Etienne
  * @version 0.1
  * @date october 2020
  */
