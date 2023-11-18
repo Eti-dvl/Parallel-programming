@@ -1,7 +1,7 @@
 /**
  * @file image_connected_components.c
  * @brief Image processing library: connected components labeling
- * @author Etienne HAMELIN
+ * @author Saint-Cirgue Arnaud _ Correge Etienne
  * @version 0.1
  * @date octobre 2020
  */

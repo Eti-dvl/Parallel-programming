@@ -1,7 +1,7 @@
 /**
  * @file image_file_io.c
  * @brief Basic image processing library: read/write NetBPM files
- * @author Etienne HAMELIN
+ * @author Saint-Cirgue Arnaud _ Correge Etienne
  * @version 0.1
  * @date october 2020
  */

@@ -1,12 +1,13 @@
 /**
  * @file main.c
  * @brief Programme principal pour le Projet ING5SE Analyse des composantes connexes
- * @author Etienne HAMELIN
+ * @author Saint-Cirgue Arnaud _ Correge Etienne
  * @version 0.1
  * @date octobre 2020
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 #include "image_lib.h"
 
 
@@ -38,16 +39,29 @@ int main(int argc, char **argv)
 {
   printf("Started.\n");
 
+  char *filename = "img/test1.pbm";
   if (argc > 1)
   {
-    test_image_connected_components(argv[1]);
+    filename = argv[1];
   }
   else
   {
     DEBUG_PRINT("Using default parameters");
-    test_image_connected_components("img/test1.pbm");
   }
-    
+  
+  int n_threads = 1;
+  if (argc > 2) 
+  {
+    n_threads = atoi(argv[2]);
+  }
+
+
+  printf("Run with %d threads, processing file: %s\n", n_threads, filename);
+
+  omp_set_num_threads(n_threads);
+
+  test_image_connected_components(filename);
+
   printf("Finished.\n");
   return 0;
 }
