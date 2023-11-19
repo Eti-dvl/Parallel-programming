@@ -26,5 +26,6 @@ int find_root(int *table, int tag);
 int join(int *table, int tag1, int tag2);
 int min_non_zero(int a, int b);
 int image_connected_components(const image_t *self, image_t *tags, image_t *color);
+void write_time_csv(double *time);
 
 #endif

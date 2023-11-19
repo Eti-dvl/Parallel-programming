@@ -312,6 +312,33 @@ void ccl_draw_bounding_boxes(image_t *color,
 }
 
 /**
+ * @brief 
+ * @param 
+ * @return 
+ */
+void write_time_csv(double *time)
+{
+  FILE *csvFile = fopen("main.csv", "a");  // Ouvre le fichier en mode écriture
+
+  if (csvFile == NULL) {
+      perror("Erreur lors de l'ouverture du fichier");
+      return 1;
+  }
+
+  // Exemple de données
+  fprintf(csvFile, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+    time[5] - time[0],
+    time[1] - time[0], 
+    time[2] - time[1], 
+    time[3] - time[2], 
+    time[4] - time[3],
+    time[5] - time[4],
+    time[6] - time[5]);
+
+  fclose(csvFile);  // Ferme le fichier
+}
+
+/**
  * @brief Identify connected components in given image
  * @param self the input image (should be a binary black & white image, i.e. self->type = IMAGE_BITMAP)
  * @param tags an image structure for holding the connected components tags (should be a 16-bit grayscale image), or NULL
@@ -331,6 +358,7 @@ int image_connected_components(
   int *class_num;
   int num_cc;
   int t;
+  double time[7];
 
   /* ~~~~~~~~~~ Verify input arguments, initialize tables ~~~~~~~~~~ */
   assert(self && 
@@ -350,11 +378,11 @@ int image_connected_components(
   equiv_table = calloc(MAX_TAGS, sizeof(int));
   assert(equiv_table);
   
-  double t0 = omp_get_wtime();
+  time[0] = omp_get_wtime();
   /* ~~~~~~~~~~ First step: assign temporary class tags ~~~~~~~~~~ */
   num_tags = ccl_temp_tag(self, tags, equiv_table);
 
-  double t1 = omp_get_wtime();
+  time[1] = omp_get_wtime();
   
 
 #ifdef DEBUG
@@ -367,7 +395,7 @@ int image_connected_components(
   }
 #endif
   
-  double t2 = omp_get_wtime();
+  time[2] = omp_get_wtime();
 
   /* ~~~~~~~~~~ Second step: reduce equivalence classes and renumber ~~~~~~~~~~ */
   DEBUG_PRINT("Now reduce tag equivalence classes, and renumber those classes");
@@ -388,7 +416,7 @@ int image_connected_components(
   }
 #endif
 
-  double t3 = omp_get_wtime();
+  time[3] = omp_get_wtime();
 
 
   /* ~~~~~~~~~~ Third step: replace temp tags by connected component number ~~~~~~~~~~ */
@@ -401,7 +429,7 @@ int image_connected_components(
   image_save_binary(tags, "classes.pgm");
 #endif
 
-  double t4 = omp_get_wtime();
+  time[4] = omp_get_wtime();
 
 
   /* ~~~~~~~~~~ Fourth step: generate useful outputs ~~~~~~~~~~ */
@@ -421,7 +449,7 @@ int image_connected_components(
     }
   }
 
-  double t5 = omp_get_wtime();
+  time[5] = omp_get_wtime();
 
 #ifdef DEBUG
   DEBUG_PRINT("Draw color output");
@@ -432,7 +460,7 @@ int image_connected_components(
   image_save_binary(color, "color.ppm");
 #endif
 
-  double t6 = omp_get_wtime();
+  time[6] = omp_get_wtime();
 
   /* liberate allocated memory */
   free(equiv_table);
@@ -445,36 +473,15 @@ int image_connected_components(
   printf("Largest connected component is class #%06d, has %9d pixels.\n", largest_cc, con_cmp[largest_cc].num_pixels);
 
   printf("Total time: %.6fs; temp tag: %.6f, save tags %.6f, reduce_equiv %.6f, retag/save %.6f, analyze %.6f, color %.6f\n", 
-    t5 - t0,
-    t1 - t0, 
-    t2 - t1, 
-    t3 - t2, 
-    t4 - t3,
-    t5 - t4,
-    t6 - t5);
+    time[5] - time[0],
+    time[1] - time[0], 
+    time[2] - time[1], 
+    time[3] - time[2], 
+    time[4] - time[3],
+    time[5] - time[4],
+    time[6] - time[5]);
 
-  FILE *csvFile = fopen("main.csv", "a");  // Ouvre le fichier en mode écriture
-
-  if (csvFile == NULL) {
-      perror("Erreur lors de l'ouverture du fichier");
-      return 1;
-  }
-
-  // Exemple de données
-  fprintf(csvFile, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
-    t5 - t0,
-    t1 - t0, 
-    t2 - t1, 
-    t3 - t2, 
-    t4 - t3,
-    t5 - t4,
-    t6 - t5);
-
-  fclose(csvFile);  // Ferme le fichier
+  write_time_csv(time);
     
   return num_cc;
 }
-
-
-
-
