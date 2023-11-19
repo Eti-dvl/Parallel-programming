@@ -1,0 +1,10 @@
+Project/classes.pgm
+Project/color.ppm
+Project/tags.pgm
+Project/build/image_connected_components.o
+Project/build/image_file_io.o
+Project/build/image.o
+Project/build/main.o
+Project/build/pixel.o
+Project/main
+Project/main.csv

@@ -355,6 +355,7 @@ int image_connected_components(
   num_tags = ccl_temp_tag(self, tags, equiv_table);
 
   double t1 = omp_get_wtime();
+  
 
 #ifdef DEBUG
   /* save temporay tags as readable file "tags.pgm" */
@@ -451,6 +452,25 @@ int image_connected_components(
     t4 - t3,
     t5 - t4,
     t6 - t5);
+
+  FILE *csvFile = fopen("main.csv", "a");  // Ouvre le fichier en mode écriture
+
+  if (csvFile == NULL) {
+      perror("Erreur lors de l'ouverture du fichier");
+      return 1;
+  }
+
+  // Exemple de données
+  fprintf(csvFile, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+    t5 - t0,
+    t1 - t0, 
+    t2 - t1, 
+    t3 - t2, 
+    t4 - t3,
+    t5 - t4,
+    t6 - t5);
+
+  fclose(csvFile);  // Ferme le fichier
     
   return num_cc;
 }

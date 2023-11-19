@@ -4,6 +4,10 @@ NAMES ?= HAMELIN_BERNE
 BIN := main
 SRC := $(wildcard src/*.c)
 OBJ := $(patsubst src/%.c,build/%.o,$(SRC))
+CSV := $(BIN).csv
+
+# Nombre de threads à utiliser 
+THREAD_NUM = 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 
 CFLAGS := -Wall		# afficher tous les warnings
 CFLAGS += -Iinc/ 	# headers .h dans inc/
@@ -41,5 +45,10 @@ submit:
 	echo "Clean up, and prepare $(NAMES).tar.gz for submission."
 	make clean
 	tar -czvf $(NAMES).tar.gz src inc report
+
+time_csv: $(BIN)
+	rm -f $(CSV)
+	echo "Total time,temp tag,save tags,reduce equiv,retag/save,analyze,color" > $(CSV)
+	for nb_thread in $(THREAD_NUM); do ./$(BIN) img/boulons.pbm $$nb_thread; done
 
 .PHONY: clean submit
