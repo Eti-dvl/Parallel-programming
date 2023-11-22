@@ -271,42 +271,69 @@ void ccl_retag(image_t *tags, int *class_num)
  * @param num_classes
  */
 void ccl_analyze(
-      const image_t *tags, 
-      image_connected_component_t *con_cmp, 
-      int num_classes)
-{
-  int x, y, t;
+      const image_t *tags,
+    image_connected_component_t *con_cmp,
+    int num_classes) {
 
-  /* initialize connected component structures */
-  for (t = 0; t < num_classes; ++t)
-  {
-    con_cmp[t] = (image_connected_component_t){
-          .num_pixels = 0,
-          .x1 = INT32_MAX,
-          .y1 = INT32_MAX,
-          .x2 = 0,
-          .y2 = 0
-        };
-  }
+  const int num_sections = 4;  // Nombre de sections pour diviser l'image
+  const int section_height = tags->height / num_sections;
 
-  for (y = 0; y < tags->height; ++y)
-  {
-    for (x = 0; x < tags->width; ++x)
-    {
-      /* get CC class of current pixel */
-      t = image_gs16_getpixel(tags, x, y).gs16;
-      if (t > 0)
-      {
-        assert(t <= num_classes);
-        /* compute size and bounding box of connected component */
-        con_cmp[t-1].num_pixels++;
-        con_cmp[t-1].x1 = MIN(con_cmp[t-1].x1, x);
-        con_cmp[t-1].y1 = MIN(con_cmp[t-1].y1, y);
-        con_cmp[t-1].x2 = MAX(con_cmp[t-1].x2, x);
-        con_cmp[t-1].y2 = MAX(con_cmp[t-1].y2, y);
+  // Tableaux temporaires pour stocker les mises à jour par thread
+  image_connected_component_t *temp_con_cmp =
+      (image_connected_component_t *)calloc(num_sections * num_classes, sizeof(image_connected_component_t));
+  assert(temp_con_cmp != NULL);
+
+  #pragma omp parallel for shared(tags, con_cmp, num_classes, temp_con_cmp) schedule(dynamic)
+  for (int section = 0; section < num_sections; ++section) {
+    int start_y = section * section_height;
+    int end_y = (section == num_sections - 1) ? tags->height : start_y + section_height;
+
+    for (int y = start_y; y < end_y; ++y) {
+      for (int x = 0; x < tags->width; ++x) {
+        int tag = image_gs16_getpixel(tags, x, y).gs16;
+        if (tag > 0 && tag <= num_classes) {
+          int t = tag - 1;
+          if (temp_con_cmp[section * num_classes + t].num_pixels == 0) {
+            temp_con_cmp[section * num_classes + t] = (image_connected_component_t){
+                .num_pixels = 1,
+                .x1 = x,
+                .y1 = y,
+                .x2 = x,
+                .y2 = y};
+          } else {
+            temp_con_cmp[section * num_classes + t].num_pixels++;
+            temp_con_cmp[section * num_classes + t].x1 = MIN(temp_con_cmp[section * num_classes + t].x1, x);
+            temp_con_cmp[section * num_classes + t].y1 = MIN(temp_con_cmp[section * num_classes + t].y1, y);
+            temp_con_cmp[section * num_classes + t].x2 = MAX(temp_con_cmp[section * num_classes + t].x2, x);
+            temp_con_cmp[section * num_classes + t].y2 = MAX(temp_con_cmp[section * num_classes + t].y2, y);
+          }
+        }
       }
     }
   }
+
+  // Fusionner les résultats des threads
+  #pragma omp parallel for shared(con_cmp, temp_con_cmp, num_classes)
+  for (int t = 0; t < num_classes; ++t) {
+    for (int section = 0; section < num_sections; ++section) {
+      if (temp_con_cmp[section * num_classes + t].num_pixels > 0) {
+        #pragma omp critical
+        {
+          if (con_cmp[t].num_pixels == 0) {
+            con_cmp[t] = temp_con_cmp[section * num_classes + t];
+          } else {
+            con_cmp[t].num_pixels += temp_con_cmp[section * num_classes + t].num_pixels;
+            con_cmp[t].x1 = MIN(con_cmp[t].x1, temp_con_cmp[section * num_classes + t].x1);
+            con_cmp[t].y1 = MIN(con_cmp[t].y1, temp_con_cmp[section * num_classes + t].y1);
+            con_cmp[t].x2 = MAX(con_cmp[t].x2, temp_con_cmp[section * num_classes + t].x2);
+            con_cmp[t].y2 = MAX(con_cmp[t].y2, temp_con_cmp[section * num_classes + t].y2);
+          }
+        }
+      }
+    }
+  }
+
+  free(temp_con_cmp);
 }
 
 /**
