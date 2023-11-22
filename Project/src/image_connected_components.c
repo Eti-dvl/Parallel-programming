@@ -92,67 +92,118 @@ int ccl_temp_tag(
       int *equiv_out)
 {
   assert(self && tags && equiv_out);
-
+  int num_tags = 0;
   int x, y;
   bool bg_color;
-  int num_tags = 0;
+  
+  int first_line_thread[20] = {0};
+  bool first_line_flag[20] = {0};
 
   DEBUG_PRINT("First step: assign temporary class tag");
 
   /* Detect background color: by convention, background is the color of the top-left pixel */
   bg_color = image_bmp_getpixel(self, 0, 0).bit;
 
-  #pragma omp parallel for private(x)
-  /* Loop over all image pixels */
-  for(y = 0; y < self->height; ++y)
-  {
-    for (x = 0; x < self->width; ++x)
+  #pragma omp parallel shared(equiv_out, first_line_thread, num_tags)
+  {  
+    #pragma omp for private(x)
+    for(y = 0; y < self->height; ++y)
     {
-      /* read current pixel color */
-      bool pxl_color = image_bmp_getpixel(self, x, y).bit;
-      
-      /* by default, pixel tag is zero (background) */
-      int tag = 0;
-
-      if (pxl_color != bg_color) 
+      if(first_line_flag[omp_get_thread_num()] == 0)
       {
-        /* Current pixel is foreground color: give it a tag, but which one? */
-
-        /* Read the tag (if any) of the North and West adjacent pixels */
-        /* or 0, if outside image coordinate ranges */
-        int tag_n = image_coord_check(tags, x, y-1) ? 
-              image_gs16_getpixel(tags, x, y-1).gs16 
-              : 0;
-        int tag_w = image_coord_check(tags, x-1, y) ? 
-              image_gs16_getpixel(tags, x-1, y).gs16
-              : 0;
-
-        /* Current pixel tag is the minimum non-zero of adjacent tags */
-        tag = min_non_zero(tag_n, tag_w);
-
-        if (tag == 0)
+        #pragma omp critical
         {
-          #pragma omp critical
-          /* adjacent pixels have not yet been tagged: allocate a new tag */
-          ++num_tags;
-          assert(num_tags < MAX_TAGS);
-          tag = num_tags;
-          /* new tag has no equivalence */
-          equiv_out[tag] = tag;
-        }
-        
-        if (tag_n > 0 && tag_w > 0 && tag_w != tag_n)
-        {
-          #pragma omp critical
-          /* if neighbors have different tags: join them */
-          join(equiv_out, tag_n, tag_w);
+        first_line_thread[omp_get_thread_num()] = y;
+        printf("\nThread %d Y = %d",omp_get_thread_num(), y);
+        first_line_flag[omp_get_thread_num()] = 1;
         }
       }
-      /* store tag in the tags image structure */
-      image_gs16_setpixel(tags, x, y, (color_t){.gs16 = tag});
+      
+      for (x = 0; x < self->width; ++x)
+      {
+        /* read current pixel color */
+        bool pxl_color = image_bmp_getpixel(self, x, y).bit;
+        
+        /* by default, pixel tag is zero (background) */
+        int tag = 0;
+
+        if (pxl_color != bg_color) 
+        {
+          /* Current pixel is foreground color: give it a tag, but which one? */
+
+          /* Read the tag (if any) of the North and West adjacent pixels */
+          /* or 0, if outside image coordinate ranges */
+          int tag_n = image_coord_check(tags, x, y-1) ? 
+                image_gs16_getpixel(tags, x, y-1).gs16 
+                : 0;
+          int tag_w = image_coord_check(tags, x-1, y) ? 
+                image_gs16_getpixel(tags, x-1, y).gs16
+                : 0;
+
+          /* Current pixel tag is the minimum non-zero of adjacent tags */
+          tag = min_non_zero(tag_n, tag_w);
+
+          /*S'il n'y a pas de voisins connexes alors on incrémentes dans la table des équivalences*/
+          if (tag == 0)
+          {
+            #pragma omp critical
+            {
+              num_tags+=1;
+              if(num_tags%100 == 0)
+              {
+                printf("\nnumber of tags : %d", num_tags);
+              }
+              assert(num_tags < MAX_TAGS);
+              tag = num_tags;
+              equiv_out[tag] = tag;
+            }
+          }
+          
+          if (tag_n > 0 && tag_w > 0 && tag_w != tag_n)
+          {
+            /* if neighbors have different tags: join them */
+            join(equiv_out, tag_n, tag_w);
+          }
+        }
+        /* store tag in the tags image structure */
+        image_gs16_setpixel(tags, x, y, (color_t){.gs16 = tag});
+      }
+    }
+
+    //printf("\n\nFIN DE LA PREMIERE SECTION\n");
+    #pragma omp barrier
+
+    for(y=0 ; y < 20 ; y++)
+    {
+      //printf("\nStart_line %d = %d", y, first_line_thread[y]);
+    } 
+    #pragma omp for private(x)
+    for(y=1 ; y < omp_get_max_threads() ; y++)
+    {
+      for(x=0 ; x < self->width ; x++)
+      {
+        //printf("\nThread %d x = %d || y = %d",omp_get_thread_num(), x, first_line_thread[y]);
+        bool pxl_color = image_bmp_getpixel(self, x, first_line_thread[y]).bit;
+
+        if (pxl_color != bg_color) 
+        {
+          int tag = image_coord_check(tags, x, first_line_thread[y]) ? 
+                  image_gs16_getpixel(tags, x, first_line_thread[y]).gs16 
+                  : 0;
+          //printf("\nTrouvééé");
+          int tag_n = image_coord_check(tags, x, first_line_thread[y]-1) ? 
+                  image_gs16_getpixel(tags, x, first_line_thread[y]-1).gs16 
+                  : 0;
+
+          if( tag_n > 0 )
+          {
+            
+            join(equiv_out, tag_n, tag);
+          }
+        }
+      }
     }
   }
-
   return num_tags;
 }
 
@@ -321,8 +372,7 @@ void write_time_csv(double *time)
   FILE *csvFile = fopen("main.csv", "a");  // Ouvre le fichier en mode écriture
 
   if (csvFile == NULL) {
-      perror("Erreur lors de l'ouverture du fichier");
-      return 1;
+    perror("Erreur lors de l'ouverture du fichier");
   }
 
   // Exemple de données
