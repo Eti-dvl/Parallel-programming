@@ -48,7 +48,7 @@ submit:
 
 time_csv: $(BIN)
 	rm -f $(CSV)
-	echo "Total time,temp tag,save tags,reduce equiv,retag/save,analyze,color" > $(CSV)
-	for nb_thread in $(THREAD_NUM); do ./$(BIN) img/boulons.pbm $$nb_thread; done
+	echo "Thread number,Total time,temp tag,retag/save,analyze" > $(CSV)
+	for nb_thread in $(THREAD_NUM); do ./$(BIN) img/cadastre.pbm $$nb_thread; done
 
 .PHONY: clean submit

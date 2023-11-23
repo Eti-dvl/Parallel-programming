@@ -247,7 +247,8 @@ int ccl_reduce_equivalences(
 void ccl_retag(image_t *tags, int *class_num)
 {
   int x, y, t;
-  /* Replace temporay class tags by their renumbered class root */
+  
+  #pragma omp parallel for private(x, t) shared(tags, class_num)
   for (y = 0; y < tags->height; ++y)
   {
     for (x = 0; x < tags->width; ++x)
@@ -403,14 +404,12 @@ void write_time_csv(double *time)
   }
 
   // Exemple de données
-  fprintf(csvFile, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+  fprintf(csvFile, "%d,%.6f,%.6f,%.6f,%.6f\n",
+    omp_get_max_threads(),
     time[5] - time[0],
-    time[1] - time[0], 
-    time[2] - time[1], 
-    time[3] - time[2], 
+    time[1] - time[0],  
     time[4] - time[3],
-    time[5] - time[4],
-    time[6] - time[5]);
+    time[5] - time[4]);
 
   fclose(csvFile);  // Ferme le fichier
 }
