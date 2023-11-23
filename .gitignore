@@ -8,3 +8,5 @@ Project/build/main.o
 Project/build/pixel.o
 Project/main
 Project/main.csv
+Project/.~lock.main.csv#
+Project/.vscode/tasks.json
